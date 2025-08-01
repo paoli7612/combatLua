@@ -98,19 +98,20 @@ function love.update(dt)
 
         -- Attacco corpo a corpo: collisione area
         if player.weapon.isActive() and player.weapon.type == "melee" then
-            local innerRadius, outerRadius, attackAngleThreshold, attackDirection = player.weapon.getAttackArea()
+            local innerRadius, outerRadius, startAngle, endAngle, currentAngle = player.weapon.getAttackArea()
             for i, enemy in ipairs(enemies) do
                 local dx = enemy.x - player.x
                 local dy = enemy.y - player.y
                 local distance = math.sqrt(dx*dx + dy*dy)
                 if distance >= innerRadius - enemy.radius and distance <= outerRadius + enemy.radius then
                     local enemyAngle = math.atan2(dy, dx)
-                    local playerAttackAngle = math.atan2(attackDirection.y, attackDirection.x)
-                    local angleDiff = math.abs(enemyAngle - playerAttackAngle)
-                    if angleDiff > math.pi then
-                        angleDiff = 2 * math.pi - angleDiff
+                    -- Gestione wrap-around
+                    local function isAngleInArc(angle, arcStart, arcEnd)
+                        local diff = (arcEnd - arcStart) % (2*math.pi)
+                        local rel = (angle - arcStart) % (2*math.pi)
+                        return rel >= 0 and rel <= diff
                     end
-                    if angleDiff <= attackAngleThreshold / 2 then
+                    if isAngleInArc(enemyAngle, startAngle, endAngle) then
                         enemy.die()
                         score = score + 100
                         break

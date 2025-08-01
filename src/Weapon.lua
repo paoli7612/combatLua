@@ -1,14 +1,16 @@
 function Weapon(playerRadius)
     local weapon = {
         active = false,
-        duration = 0.3,
+        duration = 0.25,
         timer = 0,
-        radius = 50,         -- default, sovrascritto dagli attacchi
-        angleSpread = math.pi / 3,
+        radius = 60,
+        angleSpread = math.rad(40), -- arco stretto
         playerRadius = playerRadius,
         direction = {x = 0, y = -1},
-        offset = 0,          -- distanza dal centro del player
-        type = "melee"       -- "melee" o "ranged"
+        sweepStart = 0,
+        sweepEnd = 0,
+        sweepDir = 1, -- 1 = destra->sinistra, -1 = sinistra->destra
+        type = "melee"
     }
 
     function weapon.actionMelee(direction)
@@ -16,21 +18,12 @@ function Weapon(playerRadius)
         weapon.timer = 0
         weapon.direction.x = direction.x
         weapon.direction.y = direction.y
-        weapon.radius = 50         -- area grande
-        weapon.angleSpread = math.pi / 2  -- 90 gradi
-        weapon.offset = 10         -- vicino al player
+        local baseAngle = math.atan2(direction.y, direction.x)
+        local sweepWidth = math.rad(100) -- quanto "spazza" la spada (es. 100°)
+        weapon.sweepStart = baseAngle + sweepWidth/2
+        weapon.sweepEnd = baseAngle - sweepWidth/2
+        weapon.sweepDir = -1 -- da destra a sinistra
         weapon.type = "melee"
-    end
-
-    function weapon.actionRanged(direction)
-        weapon.active = true
-        weapon.timer = 0
-        weapon.direction.x = direction.x
-        weapon.direction.y = direction.y
-        weapon.radius = 30         -- area più piccola
-        weapon.angleSpread = math.pi / 6  -- 30 gradi
-        weapon.offset = 60         -- più lontano dal player
-        weapon.type = "ranged"
     end
 
     function weapon.update(dt)
@@ -44,13 +37,17 @@ function Weapon(playerRadius)
 
     function weapon.draw(playerX, playerY)
         if weapon.active then
-            local directionAngle = math.atan2(weapon.direction.y, weapon.direction.x)
-            local startAngle = directionAngle - weapon.angleSpread / 2
-            local endAngle = directionAngle + weapon.angleSpread / 2
-            love.graphics.setColor(1, 1, 1, 0.2)
-            local innerRadius = weapon.playerRadius + weapon.offset
+            -- Calcola la posizione attuale della spada nella spazzata
+            local t = weapon.timer / weapon.duration
+            if t > 1 then t = 1 end
+            local currentAngle = weapon.sweepStart + (weapon.sweepEnd - weapon.sweepStart) * t
+            local startAngle = currentAngle - weapon.angleSpread/2
+            local endAngle = currentAngle + weapon.angleSpread/2
+
+            love.graphics.setColor(1, 1, 1, 0.25)
+            local innerRadius = weapon.playerRadius + 10
             local outerRadius = innerRadius + weapon.radius
-            local segments = 20
+            local segments = 16
             for i = 0, segments - 1 do
                 local angle1 = startAngle + (endAngle - startAngle) * (i / segments)
                 local angle2 = startAngle + (endAngle - startAngle) * ((i + 1) / segments)
@@ -74,11 +71,15 @@ function Weapon(playerRadius)
 
     -- Per collisione: restituisce i parametri attuali dell'attacco
     function weapon.getAttackArea()
-        local innerRadius = weapon.playerRadius + weapon.offset
+        if not weapon.active then return nil end
+        local t = weapon.timer / weapon.duration
+        if t > 1 then t = 1 end
+        local currentAngle = weapon.sweepStart + (weapon.sweepEnd - weapon.sweepStart) * t
+        local startAngle = currentAngle - weapon.angleSpread/2
+        local endAngle = currentAngle + weapon.angleSpread/2
+        local innerRadius = weapon.playerRadius + 10
         local outerRadius = innerRadius + weapon.radius
-        local angleSpread = weapon.angleSpread
-        local direction = weapon.direction
-        return innerRadius, outerRadius, angleSpread, direction
+        return innerRadius, outerRadius, startAngle, endAngle, currentAngle
     end
 
     return weapon
