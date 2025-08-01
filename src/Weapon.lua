@@ -1,26 +1,36 @@
-function Weapon(playerRadius, attackType)
-    local attackColors = {
-        fire = {1, 0.3, 0.3, 0.7},
-        water = {0.3, 0.5, 1, 0.7},
-        grass = {0.2, 0.8, 0.3, 0.7}
-    }
+function Weapon(playerRadius)
     local weapon = {
         active = false,
         duration = 0.3,
         timer = 0,
-        radius = 50,
+        radius = 50,         -- default, sovrascritto dagli attacchi
         angleSpread = math.pi / 3,
         playerRadius = playerRadius,
         direction = {x = 0, y = -1},
-        type = attackType or "fire",
-        color = attackColors[attackType or "fire"]
+        offset = 0,          -- distanza dal centro del player
+        type = "melee"       -- "melee" o "ranged"
     }
 
-    function weapon.action(direction)
+    function weapon.actionMelee(direction)
         weapon.active = true
         weapon.timer = 0
         weapon.direction.x = direction.x
         weapon.direction.y = direction.y
+        weapon.radius = 50         -- area grande
+        weapon.angleSpread = math.pi / 2  -- 90 gradi
+        weapon.offset = 10         -- vicino al player
+        weapon.type = "melee"
+    end
+
+    function weapon.actionRanged(direction)
+        weapon.active = true
+        weapon.timer = 0
+        weapon.direction.x = direction.x
+        weapon.direction.y = direction.y
+        weapon.radius = 30         -- area più piccola
+        weapon.angleSpread = math.pi / 6  -- 30 gradi
+        weapon.offset = 60         -- più lontano dal player
+        weapon.type = "ranged"
     end
 
     function weapon.update(dt)
@@ -37,9 +47,9 @@ function Weapon(playerRadius, attackType)
             local directionAngle = math.atan2(weapon.direction.y, weapon.direction.x)
             local startAngle = directionAngle - weapon.angleSpread / 2
             local endAngle = directionAngle + weapon.angleSpread / 2
-            love.graphics.setColor(weapon.color)
-            local innerRadius = weapon.playerRadius + 5
-            local outerRadius = weapon.playerRadius + weapon.radius
+            love.graphics.setColor(1, 1, 1, 0.2)
+            local innerRadius = weapon.playerRadius + weapon.offset
+            local outerRadius = innerRadius + weapon.radius
             local segments = 20
             for i = 0, segments - 1 do
                 local angle1 = startAngle + (endAngle - startAngle) * (i / segments)
@@ -54,21 +64,7 @@ function Weapon(playerRadius, attackType)
                 local y2_outer = playerY + math.sin(angle2) * outerRadius
                 love.graphics.polygon("fill", x1_inner, y1_inner, x2_inner, y2_inner, x2_outer, y2_outer, x1_outer, y1_outer)
             end
-            love.graphics.setColor(1, 0.5, 0.5, 0.9)
-            love.graphics.setLineWidth(2)
-            love.graphics.arc("line", "open", playerX, playerY, innerRadius, startAngle, endAngle)
-            love.graphics.arc("line", "open", playerX, playerY, outerRadius, startAngle, endAngle)
-            local x1_inner_start = playerX + math.cos(startAngle) * innerRadius
-            local y1_inner_start = playerY + math.sin(startAngle) * innerRadius
-            local x1_outer_start = playerX + math.cos(startAngle) * outerRadius
-            local y1_outer_start = playerY + math.sin(startAngle) * outerRadius
-            love.graphics.line(x1_inner_start, y1_inner_start, x1_outer_start, y1_outer_start)
-            local x2_inner_end = playerX + math.cos(endAngle) * innerRadius
-            local y2_inner_end = playerY + math.sin(endAngle) * innerRadius
-            local x2_outer_end = playerX + math.cos(endAngle) * outerRadius
-            local y2_outer_end = playerY + math.sin(endAngle) * outerRadius
-            love.graphics.line(x2_inner_end, y2_inner_end, x2_outer_end, y2_outer_end)
-            love.graphics.setLineWidth(1)
+            love.graphics.setColor(1, 1, 1, 1)
         end
     end
 
@@ -76,14 +72,13 @@ function Weapon(playerRadius, attackType)
         return weapon.active
     end
 
-    function weapon.setType(newType)
-        local attackColors = {
-            fire = {1, 0.3, 0.3, 0.7},
-            water = {0.3, 0.5, 1, 0.7},
-            grass = {0.2, 0.8, 0.3, 0.7}
-        }
-        weapon.type = newType
-        weapon.color = attackColors[newType]
+    -- Per collisione: restituisce i parametri attuali dell'attacco
+    function weapon.getAttackArea()
+        local innerRadius = weapon.playerRadius + weapon.offset
+        local outerRadius = innerRadius + weapon.radius
+        local angleSpread = weapon.angleSpread
+        local direction = weapon.direction
+        return innerRadius, outerRadius, angleSpread, direction
     end
 
     return weapon
