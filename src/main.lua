@@ -15,6 +15,7 @@ function love.load()
     love.window.setTitle("Gioco con Nemici - Scegli il tuo elemento")
     enemySpawnTimer = 0
     enemySpawnInterval = 3
+    Types.loadImages()  -- <--- carica le immagini!
 end
 
 function love.keypressed(key)
@@ -168,15 +169,18 @@ function love.draw()
 
         for i, type in ipairs(Types.list) do
             local info = Types.data[type]
-            local y = 120 + (i-1)*40
+            local y = 120 + (i-1)*80
             if i == selectedTypeIndex then
                 love.graphics.setColor(1, 1, 0)
-                love.graphics.rectangle("fill", love.graphics.getWidth()/2 - 160, y-4, 320, 36, 8, 8)
+                love.graphics.rectangle("fill", love.graphics.getWidth()/2 - 180, y-8, 360, 72, 8, 8)
             end
+            -- Disegna l'immagine a sinistra
+            Types.drawTypeImage(type, love.graphics.getWidth()/2 - 160, y, 56)
+            -- Scrivi il nome a destra dell'immagine
             love.graphics.setColor(info.color)
             love.graphics.printf(
                 string.upper(type) .. "  (" .. info.name .. ")",
-                0, y, love.graphics.getWidth(), "center"
+                love.graphics.getWidth()/2 - 90, y+12, 260, "left"
             )
             love.graphics.setColor(1, 1, 1)
         end

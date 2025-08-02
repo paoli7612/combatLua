@@ -1,23 +1,23 @@
+local Types = require('Types')
+
 function Enemy()
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
-    local types = {"fire", "water", "grass"}
-    local type = types[math.random(1, #types)]
-    local colorTable = {
-        fire = {1, 0.3, 0.3},
-        water = {0.3, 0.5, 1},
-        grass = {0.2, 0.8, 0.3}
-    }
-    local color = colorTable[type]
+
+    -- Scegli un tipo casuale tra quelli definiti in Types.lua
+    local type = Types.randomType()
+    local info = Types.data[type]
 
     local enemy = {
         x = math.random(50, screenWidth - 50),
         y = math.random(50, screenHeight - 50),
         radius = 15,
-        color = color,
+        color = info.color,
         speed = 80,
         alive = true,
         type = type,
+        name = info.name,
+        img = Types.images[type], -- Usa l'immagine caricata in Types
         dirX = 0,
         dirY = 0,
         directionChangeTimer = 0,
@@ -68,8 +68,27 @@ function Enemy()
 
     function enemy.draw()
         if enemy.alive then
-            love.graphics.setColor(enemy.color)
-            love.graphics.circle("fill", enemy.x, enemy.y, enemy.radius)
+            -- Disegna l'immagine circolare
+            if enemy.img then
+                love.graphics.stencil(function()
+                    love.graphics.circle("fill", enemy.x, enemy.y, enemy.radius)
+                end, "replace", 1)
+                love.graphics.setStencilTest("greater", 0)
+                local scale = (enemy.radius * 2) / enemy.img:getWidth()
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.draw(
+                    enemy.img,
+                    enemy.x - enemy.radius,
+                    enemy.y - enemy.radius,
+                    0,
+                    scale,
+                    scale
+                )
+                love.graphics.setStencilTest()
+            else
+                love.graphics.setColor(enemy.color)
+                love.graphics.circle("fill", enemy.x, enemy.y, enemy.radius)
+            end
             love.graphics.setColor(1, 1, 1)
             love.graphics.circle("line", enemy.x, enemy.y, enemy.radius)
             -- Disegna il tipo sopra il nemico
