@@ -145,14 +145,31 @@ function GameState.draw()
             love.graphics.print("Recupero:    " .. tostring(info.recupero), love.graphics.getWidth()/2, statsY + 20)
         end
 
-        love.graphics.setColor(1, 1, 1)
+        -- Istruzioni in basso
         local h = love.graphics.getHeight()
-        love.graphics.printf("Usa A o D per scegliere, INVIO/SPACE per confermare", 0, h - 60, love.graphics.getWidth(), "center")
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("Usa ← → o A D per scegliere, INVIO/SPACE per confermare", 0, h - 60, love.graphics.getWidth(), "center")
         love.graphics.printf("ESC per uscire", 0, h - 30, love.graphics.getWidth(), "center")
     elseif state == "playing" then
-        -- ... (resto invariato)
+        love.graphics.clear(0.1, 0.1, 0.2)
+        if Globals.player and Globals.player.draw then
+            Globals.player.draw()
+        end
+        Projectile.drawAll()
+        Enemy.drawAll()
+        -- UI
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.print("Punteggio: " .. Globals.score, 10, love.graphics.getHeight() - 60)
+        love.graphics.print("Nemici: " .. #Globals.enemies, 10, love.graphics.getHeight() - 40)
+        love.graphics.print("IJKL: movimento | Q: corpo a corpo | W: proiettile | ESC: esci", 10, 10)
+        love.graphics.print("Elemento scelto: " .. (Globals.player and Globals.player.type or ""), 10, love.graphics.getHeight() - 80)
     elseif state == "gameover" then
-        -- ... (resto invariato)
+        love.graphics.clear(0.1, 0.1, 0.2)
+        love.graphics.setColor(1, 0.2, 0.2)
+        love.graphics.printf("GAME OVER", 0, love.graphics.getHeight()/2 - 60, love.graphics.getWidth(), "center")
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("Punteggio finale: " .. Globals.score, 0, love.graphics.getHeight()/2, love.graphics.getWidth(), "center")
+        love.graphics.printf("Premi INVIO/SPACE per ricominciare\nESC per uscire", 0, love.graphics.getHeight()/2 + 40, love.graphics.getWidth(), "center")
     end
 end
 
