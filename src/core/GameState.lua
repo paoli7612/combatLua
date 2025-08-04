@@ -8,11 +8,9 @@ local Globals = require('core.Globals')
 
 local GameState = {}
 
--- Stato interno
 local state = "choose_type"
 local selectedTypeIndex = 1
 
--- Timer spawn nemici
 GameState.enemySpawnTimer = 0
 GameState.enemySpawnInterval = 3
 
@@ -26,6 +24,7 @@ function GameState.load()
     Globals.enemies = {}
     Globals.projectiles = {}
     Globals.player = nil
+    state = "choose_type"
 end
 
 function GameState.keypressed(key)
@@ -43,6 +42,12 @@ function GameState.keypressed(key)
         end
     elseif state == "playing" then
         if key == "escape" then
+            love.event.quit()
+        end
+    elseif state == "gameover" then
+        if key == "return" or key == "space" then
+            GameState.load()
+        elseif key == "escape" then
             love.event.quit()
         end
     end
@@ -81,9 +86,26 @@ function GameState.update(dt)
         Projectile.updateAll(dt)
         Enemy.updateAll(dt)
         GameState.spawnEnemies(dt)
+
+        -- COLLISIONE NEMICO-PLAYER (DANNO)
+        for _, enemy in ipairs(Globals.enemies) do
+            if enemy.alive and Globals.player.alive then
+                local dx = enemy.x - Globals.player.x
+                local dy = enemy.y - Globals.player.y
+                local dist = math.sqrt(dx*dx + dy*dy)
+                if dist < enemy.radius + Globals.player.radius then
+                    -- Danno al player
+                    Globals.player:takeDamage(1)
+                    enemy.die()
+                    if Globals.player.hp <= 0 then
+                        Globals.player.alive = false
+                        state = "gameover"
+                    end
+                end
+            end
+        end
     end
 end
-
 
 function GameState.draw()
     if state == "choose_type" then
@@ -98,9 +120,7 @@ function GameState.draw()
                 love.graphics.setColor(1, 1, 0)
                 love.graphics.rectangle("fill", love.graphics.getWidth()/2 - 180, y-8, 360, 72, 8, 8)
             end
-            -- Disegna l'immagine a sinistra
             Types.drawTypeImage(type, love.graphics.getWidth()/2 - 160, y, 56)
-            -- Scrivi il nome a destra dell'immagine
             love.graphics.setColor(info.color)
             love.graphics.printf(
                 string.upper(type) .. "  (" .. info.name .. ")",
@@ -125,6 +145,13 @@ function GameState.draw()
         love.graphics.print("Nemici: " .. #Globals.enemies, 10, love.graphics.getHeight() - 40)
         love.graphics.print("IJKL: movimento | Q: corpo a corpo | W: proiettile | ESC: esci", 10, 10)
         love.graphics.print("Elemento scelto: " .. (Globals.player and Globals.player.type or ""), 10, love.graphics.getHeight() - 80)
+    elseif state == "gameover" then
+        love.graphics.clear(0.1, 0.1, 0.2)
+        love.graphics.setColor(1, 0.2, 0.2)
+        love.graphics.printf("GAME OVER", 0, love.graphics.getHeight()/2 - 60, love.graphics.getWidth(), "center")
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("Punteggio finale: " .. Globals.score, 0, love.graphics.getHeight()/2, love.graphics.getWidth(), "center")
+        love.graphics.printf("Premi INVIO/SPACE per ricominciare\nESC per uscire", 0, love.graphics.getHeight()/2 + 40, love.graphics.getWidth(), "center")
     end
 end
 

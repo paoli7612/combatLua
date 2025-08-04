@@ -23,6 +23,8 @@ function Player(startX, startY, type)
         weapon = Weapon(20),
         img = Types.images[type or "meccanica"],
         rangedCooldown = false,
+        hp = 5, -- HP iniziali
+        maxHp = 5,
     }
 
     function player.update(dt)
@@ -73,10 +75,14 @@ function Player(startX, startY, type)
         end
     end
 
+    function player:takeDamage(amount)
+        self.hp = self.hp - amount
+        if self.hp < 0 then self.hp = 0 end
+    end
+
     function player.draw()
         player.weapon.draw(player.x, player.y)
         if player.img then
-            -- Usa uno stencil per ritagliare l'immagine in un cerchio
             love.graphics.stencil(function()
                 love.graphics.circle("fill", player.x, player.y, player.radius)
             end, "replace", 1)
@@ -95,7 +101,6 @@ function Player(startX, startY, type)
 
             love.graphics.setStencilTest()
         else
-            -- fallback: cerchio colorato
             love.graphics.setColor(1, 1, 1)
             love.graphics.circle("fill", player.x, player.y, player.radius)
         end
@@ -109,6 +114,20 @@ function Player(startX, startY, type)
         love.graphics.print("Inerzia: " .. tostring(player.inerzia), 200, y + 16)
         love.graphics.print("Persistenza: " .. tostring(player.persistenza), 200, y + 32)
         love.graphics.print("Recupero: " .. tostring(player.recupero), 200, y + 48)
+
+        -- Barra della vita
+        local barWidth = 200
+        local barHeight = 18
+        local barX = 10
+        local barY = love.graphics.getHeight() - 100
+        local hpRatio = player.hp / player.maxHp
+        love.graphics.setColor(0.2, 0.2, 0.2)
+        love.graphics.rectangle("fill", barX, barY, barWidth, barHeight, 6, 6)
+        love.graphics.setColor(0.8, 0.1, 0.1)
+        love.graphics.rectangle("fill", barX, barY, barWidth * hpRatio, barHeight, 6, 6)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("line", barX, barY, barWidth, barHeight, 6, 6)
+        love.graphics.print("Vita: " .. player.hp .. " / " .. player.maxHp, barX + 8, barY + 1)
     end
 
     return player
